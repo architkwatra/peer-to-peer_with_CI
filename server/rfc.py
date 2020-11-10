@@ -38,15 +38,9 @@ class RFCList:
         return ret
     
     def deleteRFC(self, peerOwnerHostName):
-        print("here")
         f = self.beg
-        while f:
-            print("Node value = ", f.rfcNumber)
-            f = f.next
-
         if not self.beg:
             print('The RFC list is empty\n\n')
-            print("returning False")
             return False
         
         
@@ -57,17 +51,15 @@ class RFCList:
         while f:
             if f.peerOwnerHostName == peerOwnerHostName:
                 prev.next = f.next
-                print('RFC removed successfully\n\n')
+                print('\nRFC removed successfully\n')
                 self.beg = dummy.next
                 dummy.next = None
-                print("returning True")
                 return True
             f = f.next
             prev = prev.next
         
         print('No RFC entry found for the peer ', peerOwnerHostName)
         dummy.next = None
-        print("returning False at the end")
         return False
 
     def lookForRFC(self, rfcNumber):

@@ -7,23 +7,25 @@ from peer import PeerList
 def addRFC(request, client, clientPort):
     # request =  ['ADD RFC 1 P2P-CI/1.0', 'Host: Archit@75', 
     # 'Port: 36985', 'Title: rfc1.txt']
-    protocol = request[0]
-    protocol = protocol.strip().split(' ')
-    rfcNumber = protocol[2].strip()
+    if len(request) >= 4:
+        protocol = request[0]
+        protocol = protocol.strip().split(' ')
+        rfcNumber = protocol[2].strip()
 
-    title = request[3]
-    title = title.strip().split(':')
-    rfcTitle = title[1].strip()
-    
-    rfcNode.addRFC(rfcTitle, rfcNumber , client)
-    info = rfcNumber + ' ' + rfcTitle + ' ' + client + ' ' + clientPort
-    response = ['P2P-CI/1.0 200 OK',  info]
-    ret = ''
-    for i, res in enumerate(response):
-        ret += res
-        if i != len(response) -1:
-            ret += '\n'
-    return ret
+        title = request[3]
+        title = title.strip().split(':')
+        rfcTitle = title[1].strip()
+        
+        rfcNode.addRFC(rfcTitle, rfcNumber , client)
+        info = rfcNumber + ' ' + rfcTitle + ' ' + client + ' ' + clientPort
+        response = ['P2P-CI/1.0 200 OK',  info]
+        ret = ''
+        for i, res in enumerate(response):
+            ret += res
+            if i != len(response) -1:
+                ret += '\n'
+        return ret
+    return "ERROR"
 
 def listAllRFCs():
     rfcList = rfcNode.getAllRFCs()
@@ -61,7 +63,12 @@ def searchForRFC(request):
             ret += '\n'
     return ret
 
-def spawned_thread(conn):
+def handleVersionIssue(conn):
+    resposne = "505 P2P-CI Version Not Supported"
+    response = response.encode() 
+    conn.send(response)
+
+def runThread(conn):
     conn.send("P2P-CI/1.0 200 OK".encode())
     while True:
 
@@ -73,15 +80,16 @@ def spawned_thread(conn):
         version = None
         method = None
         protocol = None
-        # request = _spawn thread request =  ADD RFC 2 P2P-CI/1.0 \n Host: Archit@834 \n Port: 31962 \n Title: b
+        # request =  ADD RFC 2 P2P-CI/1.0 \n Host: Archit@834 \n Port: 31962 \n Title: b
         try:
-            request = request.split('\n')
+            if request:
+                request = request.split('\n')
             method = request[0].strip().split()[0].strip()
             protocol = request[0].strip().split()
-            if method == 'LIST':
-                version = protocol[2].strip()
-            else:
-                version = protocol[3].strip()
+            
+            # LIST ALL P2P-CI/1.0
+            version = protocol[2].strip() if method == 'LIST' else protocol[3].strip()
+                
         except Exception as e:
             print(e)
             resposne = "P2P-CI/1.0 400 Bad Request"
@@ -103,11 +111,8 @@ def spawned_thread(conn):
             conn.send(response)
             continue
         
-        
         if version != 'P2P-CI/1.0':
-            resposne = "505 P2P-CI Version Not Supported"
-            response = response.encode() 
-            conn.send(response)
+            handleVersionIssue(conn)
             continue
         
         if method == 'ADD':
@@ -192,4 +197,4 @@ if __name__ == '__main__':
                 clientName = request[0].split(':')[1].strip()        
 
             peerNode.addPeer(clientName, clientPort)
-            _thread.start_new_thread(spawned_thread, (conn, ))
+            _thread.start_new_thread(runThread, (conn, ))
