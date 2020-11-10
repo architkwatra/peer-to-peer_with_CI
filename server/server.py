@@ -145,11 +145,14 @@ def runThread(conn):
         elif method == 'EXIT':
             try:
                 peerNode.deletePeer(hostName, portNumber)
-                while rfcNode.deleteRFC(hostName):
-                    continue
+                while True: 
+                    if rfcNode.deleteRFC(hostName):
+                        continue
+                    else:
+                        break
                 conn.send("P2P-CI/1.0 200 OK".encode())
                 conn.close()
-                print('<------------A thread has been terminated-------------->')
+                print('<------------A thread has been terminated------------>')
                 break
             except Exception as e:
                 print(e)
@@ -157,18 +160,14 @@ def runThread(conn):
 
 if __name__ == '__main__':
     sckt = socket.socket()
-
     port = 7734
-
     if sckt:        
         #(host, port)
         sckt.bind(('', port))
-        
         #Listen for connections made to the socket. The backlog argument specifies the maximum number of 
         # queued connections and should be at least 0; the maximum value is system-dependent (usually 5), 
         # the minimum value is forced to 0.   
         sckt.listen(5)
-
         print("Server listening on port number 7743!")
         peerNode = PeerList()
         rfcNode = RFCList()
@@ -181,7 +180,6 @@ if __name__ == '__main__':
             # The return value is a pair (conn, address) where conn is a new socket object usable to send 
             # and receive data on the connection, and address is the address bound to the socket on the other 
             # end of the connection.
-        
             conn, addr = 0, 0
             if sckt:
                 conn, addr = sckt.accept()

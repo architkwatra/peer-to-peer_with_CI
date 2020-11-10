@@ -14,18 +14,26 @@ class Client:
 
         self.serverPort = 7734
         self.serverIP = socket.gethostbyname('localhost')
+        self.response = ""
+        self.peerAddress = None
         print("serverIP = ", self.serverIP)
+        self.listhead = None
         ploadServerPortRandomNumber = randint(1, 48000)
         clientNumber = randint(1, 1000)
         self.clientSocket = socket.socket()        
         temp = socket.gethostname() + "@" + str(clientNumber)
         self.clientName = temp
-        self.isConnected = False
-        self.uploadServerPort = 1024 + ploadServerPortRandomNumber
+        self.user = ""
+        self.isServerUp = False
+        self.isClientReady = False
+        self.connected = False
+        temp = 1024 + ploadServerPortRandomNumber
+        self.uploadServerPort = temp
         self.uploadServerSocket = socket.socket()
         portInfo = ('', self.uploadServerPort)
         self.uploadServerSocket.bind(portInfo)
-    
+        self.data = []
+
     def connectAndSend(self, recvSocket, peerInfo, encodedRfcTitle):
         recvSocket.connect(peerInfo)        
         recvSocket.send(encodedRfcTitle)
@@ -105,42 +113,54 @@ class Client:
         print("\nFile transfer complete, terminating peer to peer connection\n")
         recvSocket.close()
 
-    def connectToServer(self):
-        temp = (self.serverIP, self.serverPort)
-        if temp:
-            self.clientSocket.connect(temp)
-        request = "Host: " + self.clientName + "\n" + "Port: " + str(self.uploadServerPort)
-        if request:
-            self.clientSocket.send(request.encode())
+    def getResponse(self, request):
+        self.clientSocket.send(request.encode())        
         response = self.clientSocket.recv(4096).decode()
         return response
 
+    def connectToServer(self):
+        temp = (self.serverIP, self.serverPort)
+        if temp:
+            self.clientSocket.connect(temp)        
+        if self.clientName and self.uploadServerPort:
+            response = self.getResponse("Host: " + self.clientName + "\n" + "Port: " + str(self.uploadServerPort))
+        
+        return response
+
     def sendRequest(self, request):
-        self.clientSocket.send(request.encode())
-        response = self.clientSocket.recv(4096).decode()
+        response = self.getResponse(request)
         return response
 
     def formReply(self, rfcTitle):
         if rfcTitle:
-            fileName = rfcTitle + '.txt'
-            info = os.stat(fileName)
-            tFormat = '%a, %d %b %Y %H:%M:%S %Z'
-            lastModified = datetime.fromtimestamp(info.st_mtime).strftime(tFormat)
-            protocol = "P2P-CI/1.0 200 OK"                    
-            dateAndTime = "Date:" + datetime.now().strftime('%a,%d %b %Y %H:%M:%S') + " " + LocalTimezone().tzname(datetime.now())
-            lastModified = "Last-Modified:" + lastModified + " " + LocalTimezone().tzname(datetime.now())
-            operatingSys = "OS:" + platform()
-            contentType = "Content-Type:text/text"
-            contentLength = "Content-Length:" + str(info.st_size)
-            reply = [protocol, dateAndTime, lastModified, operatingSys, contentType, contentLength]
+            try:
+                
+                fileName = rfcTitle + '.txt'
+                info = os.stat(fileName)
+                tFormat = '%a, %d %b %Y %H:%M:%S %Z'
+                lastModified = datetime.fromtimestamp(info.st_mtime).strftime(tFormat)
+                typee = "dateAndSystemInfo"
+                protocol = "P2P-CI/1.0 200 OK"                    
+                dateAndTime = "Date:" + datetime.now().strftime('%a,%d %b %Y %H:%M:%S') + " " + LocalTimezone().tzname(datetime.now())
+                lastModified = "Last-Modified:" + lastModified + " " + LocalTimezone().tzname(datetime.now())
+                operatingSys = "OS:" + platform()
+                sysInfo = "OS:" + str(platform()) + str(os.stat(fileName))
+                contentType = "Content-Type:text/text"
+                contentInfo = "python-text"
+                contentLength = "Content-Length:" + str(info.st_size)
+                reply = [protocol, dateAndTime, lastModified, operatingSys, contentType, contentLength]
+            
+            except Exception as e:
+                print(e)
+            
             return reply, fileName
 
     def uploadServerThread(self):
-        self.uploadServerSocket.listen(5)
         check = True
+        self.uploadServerSocket.listen(5) 
         while check:
-            c, addr = self.uploadServerSocket.accept()
-            rfcTitle = c.recv(4096).decode().strip()
+            conn, addr = self.uploadServerSocket.accept()
+            rfcTitle = conn.recv(4096).decode().strip()
             if rfcTitle:
                 try:                    
                     reply, fileName = self.formReply(rfcTitle)
@@ -149,13 +169,11 @@ class Client:
                         ret += res
                         if i != len(response)-1:
                             ret += '\n'
-                            
-                    c.send(ret.encode())
-
+                    conn.send(ret.encode())
                     with open(fileName) as file:
                         for line in file:
-                            c.send(line.encode())
-                    c.close()
+                            conn.send(line.encode())
+                    conn.close()
 
                 except Exception as e:
                     print(e)
@@ -171,14 +189,14 @@ if __name__ == '__main__':
     while check:
         try:
             response = ''
-            if not client.isConnected:
+            if not client.connected:
                 print(connect)
                 option = input()
                 if (option == 'Y' or option == 'y'):
                     _thread.start_new_thread(client.uploadServerThread, ())
                     response = client.connectToServer()
                     if response:
-                        client.isConnected = True
+                        client.connected = True
                 elif option == 'n' or option == 'N':
                     break
                 else:
@@ -202,9 +220,7 @@ if __name__ == '__main__':
 
                 elif option == '2':
                     print("Enter RFC number: ")
-                    rfcNumber = input()
-                    print("Enter RFC title: ")
-                    
+                    rfcNumber = input()                    
                     protocol = 'LOOKUP RFC ' + rfcNumber + ' P2P-CI/1.0'                
                     title = 'Title: ' + rfcTitle
                     host = 'Host: ' + client.clientName
