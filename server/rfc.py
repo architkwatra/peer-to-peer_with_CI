@@ -6,7 +6,6 @@ class RFC:
         self.peerOwnerHostName = peerOwnerHostName
 
 class RFCList:
-    
     def __init__(self):
         self.beg = None
     
@@ -14,18 +13,18 @@ class RFCList:
         def isPresent():
             f = self.beg
             while f:
-                if f.rfcNumber == rfcNumber:
+                if f.rfcNumber == rfcNumber and f.rfcFileName == rfcFileName and f.peerOwnerHostName == peerOwnerHostName:
                     return True
                 f = f.next
             return False
 
         if isPresent():
-            print("This RFC is already present")
+            print("This RFC is already present\n\n")
             return
         node = RFC(rfcFileName, rfcNumber, peerOwnerHostName)
         node.next = self.beg
         self.beg = node
-        print('RFC added succesfully')
+        print('RFC added succesfully\n\n')
 
     def getAllRFCs(self):
         if not self.beg:
@@ -39,10 +38,17 @@ class RFCList:
         return ret
     
     def deleteRFC(self, peerOwnerHostName):
+        print("here")
+        f = self.beg
+        while f:
+            print("Node value = ", f.rfcNumber)
+            f = f.next
 
         if not self.beg:
-            print('The RFC list is empty')
-            return
+            print('The RFC list is empty\n\n')
+            print("returning False")
+            return False
+        
         
         dummy = RFC('dummy', -1, 'self')
         dummy.next = self.beg
@@ -51,50 +57,27 @@ class RFCList:
         while f:
             if f.peerOwnerHostName == peerOwnerHostName:
                 prev.next = f.next
-                print('RFC removed successfully')
+                print('RFC removed successfully\n\n')
                 self.beg = dummy.next
-                return
+                dummy.next = None
+                print("returning True")
+                return True
             f = f.next
             prev = prev.next
         
         print('No RFC entry found for the peer ', peerOwnerHostName)
+        dummy.next = None
+        print("returning False at the end")
+        return False
 
-    def getRFC(self, rfcNumber):
+    def lookForRFC(self, rfcNumber):
         f = self.beg
-        while f:
+        ans = []
+        while f:            
             if f.rfcNumber == rfcNumber:
-                return {'number': f.rfcNumber, 'Name': f.rfcFileName, 'Owner': f.peerOwnerHostName}
+                ans.append({'number': f.rfcNumber, 'Name': f.rfcFileName, 'Owner': f.peerOwnerHostName})
             f = f.next
-        print('No RFC found with the number ', rfcNumber)
-        return None
-
-sol = RFCList()
-# rfcFileName, rfcNumber, peerOwnerHostName
-sol.addRFC('12', 1, 'ab')
-sol.addRFC('23', 2, 'bc')
-sol.addRFC('34', 3, 'cd')
-print(sol.getAllRFCs())
-cur = sol.getRFC(3)
-print('\n\n', cur)
-sol.deleteRFC('cd')
-print(sol.getAllRFCs())
-print('\n')
-sol.deleteRFC('bc')
-print(sol.getAllRFCs())
-sol.deleteRFC('ab')
-print(sol.getAllRFCs())
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-
+        if not ans:
+            print('No RFC found with the number ', rfcNumber)
+        print('\n\n')
+        return ans
