@@ -132,9 +132,10 @@ class Client:
         return response
 
     def formReply(self, rfcTitle):
+        reply = []
+        fileName = ''
         if rfcTitle:
-            try:
-                
+            try:                
                 fileName = rfcTitle + '.txt'
                 info = os.stat(fileName)
                 tFormat = '%a, %d %b %Y %H:%M:%S %Z'
@@ -153,7 +154,7 @@ class Client:
             except Exception as e:
                 print(e)
             
-            return reply, fileName
+        return reply, fileName
 
     def uploadServerThread(self):
         check = True
