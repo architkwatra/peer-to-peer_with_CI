@@ -186,7 +186,7 @@ if __name__ == '__main__':
     client = Client()
     check = True
     connect = 'Do you want to connect to Server, (y/n)?: '
-    options = "\n Please choose any pne of the above options\n\n 1. ADD \n 2. LOOKUP\n 3. LIST\n 4. GET\n 5. EXIT\n"
+    options = "\n Please choose any one of the above options\n\n 1. ADD \n 2. LOOKUP\n 3. LIST\n 4. GET\n 5. EXIT\n"
     while check:
         try:
             response = ''
